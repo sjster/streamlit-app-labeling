@@ -4,13 +4,13 @@ import pandas as pd
 
 # Set page config
 st.set_page_config(
-    page_title="JSON File Uploader",
+    page_title="Data Labeling (Triplets)",
     page_icon="📊",
     layout="centered"
 )
 
 # Main content
-st.title("JSON File Uploader")
+st.title("Data Labeling (Triplets)")
 st.write("Upload a JSON file to display its contents in a table.")
 
 # File uploader
@@ -62,8 +62,43 @@ if uploaded_file is not None:
         # Add a separator line
         st.markdown("---")
         
-        # Display each row with validation checkbox
-        for idx, row in df.iterrows():
+        # Pagination setup
+        rows_per_page = 5
+        total_pages = (len(df) + rows_per_page - 1) // rows_per_page
+        
+        # Initialize page in session state
+        if 'current_page' not in st.session_state:
+            st.session_state.current_page = 1
+        
+        # Always use session state for the current page
+        page = st.session_state.current_page
+        
+        # Page navigation
+        if total_pages > 1:
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                selected_page = st.selectbox(
+                    "Select Page:",
+                    range(1, total_pages + 1),
+                    format_func=lambda x: f"Page {x} of {total_pages}",
+                    index=page - 1,
+                    key="page_selector"
+                )
+                # Update session state when page changes
+                if selected_page != page:
+                    st.session_state.current_page = selected_page
+                    st.rerun()
+        
+        # Calculate start and end indices for current page
+        start_idx = (page - 1) * rows_per_page
+        end_idx = min(start_idx + rows_per_page, len(df))
+        
+        # Display pagination info
+        st.info(f"Showing rows {start_idx + 1}-{end_idx} of {len(df)} total rows (Page {page} of {total_pages})")
+        
+        # Display each row with validation checkbox for current page
+        for idx in range(start_idx, end_idx):
+            row = df.iloc[idx]
             col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
             
             with col1:
@@ -92,17 +127,51 @@ if uploaded_file is not None:
         validated_count = sum(st.session_state.validation_states)
         total_count = len(df)
         
-        col1, col2, col3 = st.columns(3)
+        # Current page validation stats
+        current_page_validated = sum(st.session_state.validation_states[start_idx:end_idx])
+        current_page_total = end_idx - start_idx
+        
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Total Rows", total_count)
         with col2:
             st.metric("Validated", validated_count)
         with col3:
             st.metric("Remaining", total_count - validated_count)
+        with col4:
+            st.metric("Page Validated", f"{current_page_validated}/{current_page_total}")
         
         # Progress bar
         progress = validated_count / total_count if total_count > 0 else 0
-        st.progress(progress, text=f"Validation Progress: {validated_count}/{total_count} ({progress:.1%})")
+        st.progress(progress, text=f"Overall Progress: {validated_count}/{total_count} ({progress:.1%})")
+        
+        # Page navigation buttons
+        if total_pages > 1:
+            st.markdown("---")
+            nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns(5)
+            
+            with nav_col1:
+                if st.button("⏮️ First", disabled=(page == 1), key="first_btn"):
+                    st.session_state.current_page = 1
+                    st.rerun()
+            
+            with nav_col2:
+                if st.button("⬅️ Previous", disabled=(page == 1), key="prev_btn"):
+                    st.session_state.current_page = page - 1
+                    st.rerun()
+            
+            with nav_col3:
+                st.write(f"**Page {page} of {total_pages}**")
+            
+            with nav_col4:
+                if st.button("➡️ Next", disabled=(page == total_pages), key="next_btn"):
+                    st.session_state.current_page = page + 1
+                    st.rerun()
+            
+            with nav_col5:
+                if st.button("⏭️ Last", disabled=(page == total_pages), key="last_btn"):
+                    st.session_state.current_page = total_pages
+                    st.rerun()
         
         # Download section
         st.subheader("📥 Download Results")
@@ -151,12 +220,3 @@ if uploaded_file is not None:
 else:
     st.info("👆 Please upload a JSON file to get started")
     
-    # Show example of expected format
-    with st.expander("📝 Example JSON format"):
-        st.code("""
-[
-  {"name": "John", "age": 30, "city": "New York"},
-  {"name": "Jane", "age": 25, "city": "Los Angeles"},
-  {"name": "Bob", "age": 35, "city": "Chicago"}
-]
-        """, language="json")
