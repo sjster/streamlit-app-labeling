@@ -44,27 +44,36 @@ if uploaded_file is not None:
         st.subheader("📊 Data Validation Table")
         st.write("Review the sentences and check the box if they are correctly labeled:")
         
-        # Create columns for layout
-        col1, col2 = st.columns([3, 1])
+        # Create table header
+        header_col1, header_col2, header_col3, header_col4 = st.columns([2, 2, 2, 1])
         
-        with col1:
-            st.write("**Data Preview:**")
+        with header_col1:
+            st.markdown("**🔗 Anchor Sentence**")
         
-        with col2:
-            st.write("**Validation:**")
+        with header_col2:
+            st.markdown("**🔄 Opposite Sentence**")
+        
+        with header_col3:
+            st.markdown("**✅ Same Meaning Sentence**")
+        
+        with header_col4:
+            st.markdown("**✓ Validation**")
+        
+        # Add a separator line
+        st.markdown("---")
         
         # Display each row with validation checkbox
         for idx, row in df.iterrows():
             col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
             
             with col1:
-                st.write(f"**Anchor:** {row['anchor_sentence']}")
+                st.write(f"{row['anchor_sentence']}")
             
             with col2:
-                st.write(f"**Opposite:** {row['opposite_sentence']}")
+                st.write(f"{row['opposite_sentence']}")
             
             with col3:
-                st.write(f"**Same Meaning:** {row['same_meaning_sentence']}")
+                st.write(f"{row['same_meaning_sentence']}")
             
             with col4:
                 # Create unique key for each checkbox
@@ -94,6 +103,42 @@ if uploaded_file is not None:
         # Progress bar
         progress = validated_count / total_count if total_count > 0 else 0
         st.progress(progress, text=f"Validation Progress: {validated_count}/{total_count} ({progress:.1%})")
+        
+        # Download section
+        st.subheader("📥 Download Results")
+        
+        # Create a copy of the dataframe with validation column
+        df_with_validation = df.copy()
+        df_with_validation['is_validated'] = st.session_state.validation_states
+        
+        # Convert to CSV for download
+        csv_data = df_with_validation.to_csv(index=False)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.download_button(
+                label="📄 Download CSV with Validation",
+                data=csv_data,
+                file_name="validated_data.csv",
+                mime="text/csv",
+                help="Download the data with validation results as a CSV file"
+            )
+        
+        with col2:
+            # Download only validated rows
+            validated_df = df_with_validation[df_with_validation['is_validated'] == True]
+            if len(validated_df) > 0:
+                validated_csv = validated_df.to_csv(index=False)
+                st.download_button(
+                    label="✅ Download Only Validated Rows",
+                    data=validated_csv,
+                    file_name="validated_only_data.csv",
+                    mime="text/csv",
+                    help="Download only the rows that have been validated"
+                )
+            else:
+                st.info("No validated rows to download yet")
         
         # Show summary info
         st.info(f"✅ Successfully loaded {len(df)} rows and {len(df.columns)} columns")
