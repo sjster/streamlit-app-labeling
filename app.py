@@ -43,17 +43,37 @@ st.set_page_config(
 st.title("Data Labeling (Triplets)")
 st.write("Upload a JSON file to display its contents in a table.")
 
-# File uploader
+# Initialize session state for S3 data
+if 's3_data' not in st.session_state:
+    st.session_state.s3_data = None
 
-json_obj = None
+# File uploader section
+col1, col2 = st.columns([1, 1])
 
-if st.button("⬇️ Download assembled_data.json from S3"):
-    try:
-        json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
-    except Exception as e:
-        st.error(f"Error downloading file from S3: {str(e)}")
-    else:
-        st.write(f"✅ Successfully downloaded {len(json_obj)} rows from S3")
+with col1:
+    if st.button("⬇️ Download assembled_data.json from S3"):
+        try:
+            json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
+            if json_obj is not None:
+                st.session_state.s3_data = json_obj
+                st.success(f"✅ Successfully downloaded {len(json_obj)} rows from S3")
+            else:
+                st.error("Failed to download data from S3")
+        except Exception as e:
+            st.error(f"Error downloading file from S3: {str(e)}")
+
+with col2:
+    if st.button("🗑️ Clear Data"):
+        st.session_state.s3_data = None
+        st.session_state.validation_states = []
+        st.success("Data cleared!")
+
+# Show data status
+if st.session_state.s3_data is not None:
+    st.info(f"📊 Data loaded: {len(st.session_state.s3_data)} rows ready for validation")
+
+# Use session state data
+json_obj = st.session_state.s3_data
 
 if json_obj is not None:
 
