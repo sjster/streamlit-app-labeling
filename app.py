@@ -46,12 +46,14 @@ st.title("Data Labeling (Triplets)")
 st.write("Upload a JSON file to display its contents in a table.")
 
 # File uploader
+"""
 uploaded_file = st.file_uploader(
     "Choose a JSON file",
     type=['json'],
     help="Upload a JSON file to view its contents"
 )
-
+"""
+uploaded_file = json_obj
 if uploaded_file is not None:
     try:
         # Read and parse JSON
