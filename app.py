@@ -45,6 +45,8 @@ st.write("Upload a JSON file to display its contents in a table.")
 
 # File uploader
 
+json_obj = None
+
 if st.button("⬇️ Download assembled_data.json from S3"):
     try:
         json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
@@ -54,6 +56,7 @@ if st.button("⬇️ Download assembled_data.json from S3"):
         st.write(f"✅ Successfully downloaded {len(json_obj)} rows from S3")
 
 if json_obj is not None:
+
     try:
         # Read and parse JSON
         #json_data = json.load(uploaded_file)
