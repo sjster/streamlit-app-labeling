@@ -73,21 +73,11 @@ if uploaded_file is not None:
         # Always use session state for the current page
         page = st.session_state.current_page
         
-        # Page navigation
+        # Page navigation - just show current page info
         if total_pages > 1:
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                selected_page = st.selectbox(
-                    "Select Page:",
-                    range(1, total_pages + 1),
-                    format_func=lambda x: f"Page {x} of {total_pages}",
-                    index=page - 1,
-                    key="page_selector"
-                )
-                # Update session state when page changes
-                if selected_page != page:
-                    st.session_state.current_page = selected_page
-                    st.rerun()
+                st.write(f"**Current Page: {page} of {total_pages}**")
         
         # Calculate start and end indices for current page
         start_idx = (page - 1) * rows_per_page
@@ -171,6 +161,22 @@ if uploaded_file is not None:
             with nav_col5:
                 if st.button("⏭️ Last", disabled=(page == total_pages), key="last_btn"):
                     st.session_state.current_page = total_pages
+                    st.rerun()
+            
+            # Add a page input field below the navigation buttons
+            st.markdown("---")
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                jump_page = st.number_input(
+                    "Jump to page:",
+                    min_value=1,
+                    max_value=total_pages,
+                    value=page,
+                    step=1,
+                    key="jump_page_input"
+                )
+                if jump_page != page:
+                    st.session_state.current_page = int(jump_page)
                     st.rerun()
         
         # Download section
