@@ -10,9 +10,9 @@ from rich import print
 aws = st.secrets["aws"]
 
 session = boto3.Session(
-    aws_access_key_id=aws["access_key_id"],
-    aws_secret_access_key=aws["secret_access_key"],
-    region_name=aws["region"],
+    aws_access_key_id=aws["ACCESS_KEY_ID"],
+    aws_secret_access_key=aws["SECRET_ACCESS_KEY"],
+    region_name=aws["AWS_REGION"],
 )
 s3 = session.client("s3")
 
