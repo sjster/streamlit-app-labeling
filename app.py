@@ -31,7 +31,7 @@ def read_json_from_s3(s3, bucket_name, s3_key):
         print(f"❌ Error reading JSON from S3: {str(e)}")
         return None
 
-json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
+
 st.write(len(json_obj))
 
 # Set page config
@@ -46,15 +46,16 @@ st.title("Data Labeling (Triplets)")
 st.write("Upload a JSON file to display its contents in a table.")
 
 # File uploader
-"""
-uploaded_file = st.file_uploader(
-    "Choose a JSON file",
-    type=['json'],
-    help="Upload a JSON file to view its contents"
-)
-"""
-uploaded_file = json_obj
-if uploaded_file is not None:
+
+if st.button("⬇️ Download assembled_data.json from S3"):
+    try:
+        json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
+    except Exception as e:
+        st.error(f"Error downloading file from S3: {str(e)}")
+    else:
+        st.write(f"✅ Successfully downloaded {len(json_obj)} rows from S3")
+
+if json_obj is not None:
     try:
         # Read and parse JSON
         #json_data = json.load(uploaded_file)
