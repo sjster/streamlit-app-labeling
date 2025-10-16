@@ -41,7 +41,7 @@ st.set_page_config(
 
 # Main content
 st.title("Data Labeling (Triplets)")
-st.write("Upload a JSON file to display its contents in a table.")
+#st.write("Upload a JSON file to display its contents in a table.")
 
 # Initialize session state for S3 data
 if 's3_data' not in st.session_state:
@@ -254,5 +254,5 @@ if json_obj is not None:
     except Exception as e:
         st.error(f"❌ Error processing file: {str(e)}")
 else:
-    st.info("👆 Please upload a JSON file to get started")
+    st.info("👆 Please click download data to get started")
     
