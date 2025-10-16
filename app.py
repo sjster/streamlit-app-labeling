@@ -55,7 +55,8 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
     try:
         # Read and parse JSON
-        json_data = json.load(uploaded_file)
+        #json_data = json.load(uploaded_file)
+        json_data = json_obj
         
         try:
             df = pd.DataFrame(json_data["data_deduplicated"])
