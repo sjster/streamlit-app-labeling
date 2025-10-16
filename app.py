@@ -32,8 +32,6 @@ def read_json_from_s3(s3, bucket_name, s3_key):
         return None
 
 
-st.write(len(json_obj))
-
 # Set page config
 st.set_page_config(
     page_title="Data Labeling (Triplets)",
