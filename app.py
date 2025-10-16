@@ -51,12 +51,12 @@ if 's3_data' not in st.session_state:
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    if st.button("⬇️ Download assembled_data.json from S3"):
+    if st.button("⬇️ Download data"):
         try:
             json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
             if json_obj is not None:
                 st.session_state.s3_data = json_obj
-                st.success(f"✅ Successfully downloaded {len(json_obj)} rows from S3")
+                st.success(f"✅ Successfully downloaded data")
             else:
                 st.error("Failed to download data from S3")
         except Exception as e:
