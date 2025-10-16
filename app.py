@@ -1,6 +1,38 @@
 import streamlit as st
 import json
 import pandas as pd
+import boto3
+import os
+import json
+from rich import print
+
+
+aws = st.secrets["aws"]
+
+session = boto3.Session(
+    aws_access_key_id=aws["access_key_id"],
+    aws_secret_access_key=aws["secret_access_key"],
+    region_name=aws["region"],
+)
+s3 = session.client("s3")
+
+bucket_name = aws["bucket_name"]
+prefix = aws["prefix"]
+
+def read_json_from_s3(s3, bucket_name, s3_key):
+    """Read a JSON object directly from S3 without saving to a file"""
+    try:
+        response = s3.get_object(Bucket=bucket_name, Key=s3_key)
+        content = response['Body'].read().decode('utf-8')
+        json_obj = json.loads(content)
+        print(f"✅ Successfully read JSON from s3://{bucket_name}/{s3_key}")
+        return json_obj
+    except Exception as e:
+        print(f"❌ Error reading JSON from S3: {str(e)}")
+        return None
+
+json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
+st.write(len(json_obj))
 
 # Set page config
 st.set_page_config(
