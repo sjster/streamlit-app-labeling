@@ -192,35 +192,8 @@ if json_obj is not None:
         progress = validated_count / total_count if total_count > 0 else 0
         st.progress(progress, text=f"Overall Progress: {validated_count}/{total_count} ({progress:.1%})")
         
-        # Page navigation buttons
+        # Page navigation
         if total_pages > 1:
-            st.markdown("---")
-            nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns(5)
-            
-            with nav_col1:
-                if st.button("⏮️ First", disabled=(page == 1), key="first_btn"):
-                    st.session_state.current_page = 1
-                    st.rerun()
-            
-            with nav_col2:
-                if st.button("⬅️ Previous", disabled=(page == 1), key="prev_btn"):
-                    st.session_state.current_page = page - 1
-                    st.rerun()
-            
-            with nav_col3:
-                st.write(f"**Page {page} of {total_pages}**")
-            
-            with nav_col4:
-                if st.button("➡️ Next", disabled=(page == total_pages), key="next_btn"):
-                    st.session_state.current_page = page + 1
-                    st.rerun()
-            
-            with nav_col5:
-                if st.button("⏭️ Last", disabled=(page == total_pages), key="last_btn"):
-                    st.session_state.current_page = total_pages
-                    st.rerun()
-            
-            # Add a page input field below the navigation buttons
             st.markdown("---")
             col1, col2, col3 = st.columns([1, 1, 1])
             with col2:
