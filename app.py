@@ -151,7 +151,7 @@ if json_obj is not None:
         # Display each row with validation checkbox for current page
         for idx in range(start_idx, end_idx):
             row = df.iloc[idx]
-            col1, col2, col3, col4 = st.columns([2, 2, 2, 2, 2, 1])
+            col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 2, 1])
             
             with col1:
                 st.write(f"{row['id']}")
