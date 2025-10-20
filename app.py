@@ -36,7 +36,8 @@ def read_json_from_s3(s3, bucket_name, s3_key):
 st.set_page_config(
     page_title="Data Labeling (Triplets)",
     page_icon="📊",
-    layout="centered"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Main content
@@ -84,7 +85,6 @@ if json_obj is not None:
         
         try:
             df = pd.DataFrame(json_data["data_deduplicated"])
-            st.success(df.columns)
             df = df[["id", "group_id", "anchor_sentence", "opposite_sentence", "same_meaning_sentence"]]
         except Exception as e:
             st.error("Unsupported JSON format. Please upload a JSON file with an array of objects or a single object.")
@@ -152,17 +152,30 @@ if json_obj is not None:
         for idx in range(start_idx, end_idx):
             row = df.iloc[idx]
             col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 2, 1])
-            
+
             with col1:
                 st.write(f"{row['id']}")
             with col2:
                 st.write(f"{row['group_id']}")
             with col3:
                 st.write(f"{row['anchor_sentence']}")
+            
+            # Apply background colors to entire columns 4 and 5
             with col4:
-                st.write(f"{row['opposite_sentence']}")
+                st.markdown(
+                    f'<div style="color: #b32020; padding: 0.5em; border-radius: 8px; margin: 0.2em 0; min-height: 2em;">'
+                    f'{row["opposite_sentence"]}'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
             with col5:
-                st.write(f"{row['same_meaning_sentence']}")
+                st.markdown(
+                    f'<div style="color: #2066b3; padding: 0.5em; border-radius: 8px; margin: 0.2em 0; min-height: 2em;">'
+                    f'{row["same_meaning_sentence"]}'
+                    f'</div>', 
+                    unsafe_allow_html=True
+                )
+            
             with col6:
                 # Create unique key for each checkbox
                 checkbox_key = f"validate_{idx}"
