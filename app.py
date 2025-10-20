@@ -84,7 +84,7 @@ if json_obj is not None:
         
         try:
             df = pd.DataFrame(json_data["data_deduplicated"])
-            df = df[["anchor_sentence", "opposite_sentence", "same_meaning_sentence"]]
+            df = df[["id", "group_id", "anchor_sentence", "opposite_sentence", "same_meaning_sentence"]]
         except Exception as e:
             st.error("Unsupported JSON format. Please upload a JSON file with an array of objects or a single object.")
             st.stop()
@@ -102,18 +102,22 @@ if json_obj is not None:
         st.write("Review the sentences and check the box if they are correctly labeled:")
         
         # Create table header
-        header_col1, header_col2, header_col3, header_col4 = st.columns([2, 2, 2, 1])
+        header_col1, header_col2, header_col3, header_col4, header_col5, header_col6 = st.columns([2, 2, 2, 2, 2, 1])
         
         with header_col1:
-            st.markdown("**🔗 Anchor Sentence**")
-        
+
+            st.markdown("**🔄 ID**")
         with header_col2:
+            st.markdown("**🔄 Group ID**")
+        with header_col3:
+            st.markdown("**🔗 Anchor Sentence**")
+        with header_col4:
             st.markdown("**🔄 Opposite Sentence**")
         
-        with header_col3:
+        with header_col5:
             st.markdown("**✅ Same Meaning Sentence**")
         
-        with header_col4:
+        with header_col6:
             st.markdown("**✓ Validation**")
         
         # Add a separator line
@@ -146,18 +150,19 @@ if json_obj is not None:
         # Display each row with validation checkbox for current page
         for idx in range(start_idx, end_idx):
             row = df.iloc[idx]
-            col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
+            col1, col2, col3, col4 = st.columns([2, 2, 2, 2, 2, 1])
             
             with col1:
-                st.write(f"{row['anchor_sentence']}")
-            
+                st.write(f"{row['id']}")
             with col2:
-                st.write(f"{row['opposite_sentence']}")
-            
+                st.write(f"{row['group_id']}")
             with col3:
-                st.write(f"{row['same_meaning_sentence']}")
-            
+                st.write(f"{row['anchor_sentence']}")
             with col4:
+                st.write(f"{row['opposite_sentence']}")
+            with col5:
+                st.write(f"{row['same_meaning_sentence']}")
+            with col6:
                 # Create unique key for each checkbox
                 checkbox_key = f"validate_{idx}"
                 is_valid = st.checkbox(
