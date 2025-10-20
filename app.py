@@ -84,6 +84,7 @@ if json_obj is not None:
         
         try:
             df = pd.DataFrame(json_data["data_deduplicated"])
+            st.success(df.columns)
             df = df[["id", "group_id", "anchor_sentence", "opposite_sentence", "same_meaning_sentence"]]
         except Exception as e:
             st.error("Unsupported JSON format. Please upload a JSON file with an array of objects or a single object.")
