@@ -5,6 +5,7 @@ import boto3
 import os
 import json
 from rich import print
+from data_s3_manager import S3Manager
 
 
 aws = st.secrets["aws"]
@@ -32,16 +33,66 @@ def read_json_from_s3(s3, bucket_name, s3_key):
         return None
 
 
+def upload_validated_data_to_s3(df, validation_states, bucket_name, prefix, username=None):
+    """Upload validated data back to S3 as JSON"""
+    try:
+        # Create a copy of the dataframe with validation column
+        df_with_validation = df.copy()
+        df_with_validation['is_validated'] = validation_states
+        
+        # Convert to JSON format similar to the original structure
+        validated_data = {
+            "data_deduplicated": df_with_validation.to_dict('records'),
+            "metadata": {
+                "total_rows": len(df),
+                "validated_rows": sum(validation_states),
+                "validation_timestamp": pd.Timestamp.now().isoformat(),
+                "validated_by": username if username else "unknown"
+            }
+        }
+        
+        # Initialize S3Manager
+        s3_manager = S3Manager(bucket_name=bucket_name, prefix=prefix)
+        
+        # Create a temporary file to upload
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+            json.dump(validated_data, temp_file, indent=2)
+            temp_file_path = temp_file.name
+        
+        # Upload to S3 with username in filename if provided
+        if username:
+            s3_key = f"{prefix}validated_data_pairs_{username}.json"
+        else:
+            s3_key = f"{prefix}validated_data_pairs.json"
+        
+        success = s3_manager.upload_file_to_s3(s3_key, temp_file_path)
+        
+        # Clean up temporary file
+        os.unlink(temp_file_path)
+        
+        if success:
+            print(f"✅ Successfully uploaded validated data to s3://{bucket_name}/{s3_key}")
+            return True, s3_key
+        else:
+            print(f"❌ Failed to upload validated data to S3")
+            return False, None
+            
+    except Exception as e:
+        print(f"❌ Error uploading validated data to S3: {str(e)}")
+        return False, None
+
+
 # Set page config
 st.set_page_config(
-    page_title="Data Labeling (Triplets)",
+    page_title="Data Labeling (Pairs)",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # Main content
-st.title("Data Labeling (Triplets)")
+st.title("Data Labeling (Pairs)")
 #st.write("Upload a JSON file to display its contents in a table.")
 
 # Initialize session state for S3 data
@@ -54,7 +105,7 @@ col1, col2 = st.columns([1, 1])
 with col1:
     if st.button("⬇️ Download data"):
         try:
-            json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data.json")
+            json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data_pairs.json")
             if json_obj is not None:
                 st.session_state.s3_data = json_obj
                 st.success(f"✅ Successfully downloaded data")
@@ -85,7 +136,7 @@ if json_obj is not None:
         
         try:
             df = pd.DataFrame(json_data["data_deduplicated"])
-            df = df[["id", "group_id", "anchor_sentence", "opposite_sentence", "same_meaning_sentence"]]
+            df = df[["id", "group_id", "sentence1", "sentence2", "label"]]
         except Exception as e:
             st.error("Unsupported JSON format. Please upload a JSON file with an array of objects or a single object.")
             st.stop()
@@ -111,12 +162,12 @@ if json_obj is not None:
         with header_col2:
             st.markdown("**🔄 Group ID**")
         with header_col3:
-            st.markdown("**🔗 Anchor Sentence**")
+            st.markdown("**🔗 Sentence 1**")
         with header_col4:
-            st.markdown("**🔄 Opposite Sentence**")
+            st.markdown("**🔄 Sentence 2**")
         
         with header_col5:
-            st.markdown("**✅ Same Meaning Sentence**")
+            st.markdown("**✅ Label**")
         
         with header_col6:
             st.markdown("**✓ Validation**")
@@ -158,20 +209,20 @@ if json_obj is not None:
             with col2:
                 st.write(f"{row['group_id']}")
             with col3:
-                st.write(f"{row['anchor_sentence']}")
+                st.write(f"{row['sentence1']}")
             
             # Apply background colors to entire columns 4 and 5
             with col4:
                 st.markdown(
                     f'<div style="color: #b32020; padding: 0.5em; border-radius: 8px; margin: 0.2em 0; min-height: 2em;">'
-                    f'{row["opposite_sentence"]}'
+                    f'{row["sentence2"]}'
                     f'</div>',
                     unsafe_allow_html=True
                 )
             with col5:
                 st.markdown(
                     f'<div style="color: #2066b3; padding: 0.5em; border-radius: 8px; margin: 0.2em 0; min-height: 2em;">'
-                    f'{row["same_meaning_sentence"]}'
+                    f'{row["label"]}'
                     f'</div>', 
                     unsafe_allow_html=True
                 )
@@ -228,8 +279,8 @@ if json_obj is not None:
                     st.session_state.current_page = int(jump_page)
                     st.rerun()
         
-        # Download section
-        st.subheader("📥 Download Results")
+        # Download and Upload section
+        st.subheader("📥 Download & Upload Results")
         
         # Create a copy of the dataframe with validation column
         df_with_validation = df.copy()
@@ -238,13 +289,13 @@ if json_obj is not None:
         # Convert to CSV for download
         csv_data = df_with_validation.to_csv(index=False)
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             st.download_button(
                 label="📄 Download CSV with Validation",
                 data=csv_data,
-                file_name="validated_data.csv",
+                file_name="validated_data_pairs.csv",
                 mime="text/csv",
                 help="Download the data with validation results as a CSV file"
             )
@@ -257,12 +308,48 @@ if json_obj is not None:
                 st.download_button(
                     label="✅ Download Only Validated Rows",
                     data=validated_csv,
-                    file_name="validated_only_data.csv",
+                    file_name="validated_only_data_pairs.csv",
                     mime="text/csv",
                     help="Download only the rows that have been validated"
                 )
             else:
                 st.info("No validated rows to download yet")
+        
+        with col3:
+            # Upload to S3 button
+            validated_count = sum(st.session_state.validation_states)
+            # Request username to append to S3 filename
+            if validated_count > 0:
+                username = st.text_input(
+                    "Enter your username (to be appended to the S3 filename):",
+                    value="",
+                    max_chars=32,
+                    placeholder="e.g. alice"
+                )
+                if not username:
+                    st.info("Please enter a username before uploading.")
+                else:
+                    if st.button(
+                        "☁️ Push to S3",
+                        help="Upload validated data back to S3 as JSON",
+                        type="primary"
+                    ):
+                        with st.spinner("Uploading validated data to S3..."):
+                            # Pass username to upload function, or modify S3 key/filename
+                            success, s3_key = upload_validated_data_to_s3(
+                                df, 
+                                st.session_state.validation_states, 
+                                bucket_name, 
+                                prefix,
+                                username=username # Make sure the function can accept username!
+                            )
+                            
+                            if success:
+                                st.success(f"✅ Successfully uploaded {validated_count} validated rows to S3 as {s3_key}!")
+                            else:
+                                st.error("❌ Failed to upload data to S3. Please check your AWS credentials and try again.")
+            else:
+                st.info("No validated rows to upload yet")
         
         # Show summary info
         st.info(f"✅ Successfully loaded {len(df)} rows and {len(df.columns)} columns")
