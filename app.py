@@ -20,7 +20,7 @@ s3 = session.client("s3")
 bucket_name = aws["bucket_name"]
 prefix = aws["prefix"]
 
-def read_json_from_s3(s3, bucket_name, s3_key):
+def read_json_from_s3(s3, bucket_name, s3_key) -> dict:
     """Read a JSON object directly from S3 without saving to a file"""
     try:
         response = s3.get_object(Bucket=bucket_name, Key=s3_key)
@@ -33,7 +33,7 @@ def read_json_from_s3(s3, bucket_name, s3_key):
         return None
 
 
-def upload_validated_data_to_s3(df, validation_states, bucket_name, prefix, username=None):
+def upload_validated_data_to_s3(s3, df, validation_states, bucket_name, prefix, username=None) -> bool:
     """Upload validated data back to S3 as JSON"""
     try:
         # Create a copy of the dataframe with validation column
@@ -51,36 +51,22 @@ def upload_validated_data_to_s3(df, validation_states, bucket_name, prefix, user
             }
         }
         
-        # Initialize S3Manager
-        s3_manager = S3Manager(bucket_name=bucket_name, prefix=prefix)
-        
-        # Create a temporary file to upload
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
-            json.dump(validated_data, temp_file, indent=2)
-            temp_file_path = temp_file.name
-        
         # Upload to S3 with username in filename if provided
         if username:
             s3_key = f"{prefix}validated_data_pairs_{username}.json"
         else:
             s3_key = f"{prefix}validated_data_pairs.json"
-        
-        success = s3_manager.upload_file_to_s3(s3_key, temp_file_path)
-        
-        # Clean up temporary file
-        os.unlink(temp_file_path)
-        
-        if success:
-            print(f"✅ Successfully uploaded validated data to s3://{bucket_name}/{s3_key}")
-            return True, s3_key
-        else:
-            print(f"❌ Failed to upload validated data to S3")
-            return False, None
+
+        json_str = json.dumps(validated_data, ensure_ascii=False, indent=2)
+
+        s3.put_object(Bucket=bucket_name, Key=s3_key, Body=json_str.encode('utf-8'))
+       
+        st.success(f"✅ Successfully uploaded validated data to s3://{bucket_name}/{s3_key}")
+        return True
             
     except Exception as e:
-        print(f"❌ Error uploading validated data to S3: {str(e)}")
-        return False, None
+        st.error(f"❌ Error uploading validated data to S3: {str(e)}")
+        return False
 
 
 # Set page config
@@ -338,18 +324,14 @@ if json_obj is not None:
                     ):
                         with st.spinner("Uploading validated data to S3..."):
                             # Pass username to upload function, or modify S3 key/filename
-                            success, s3_key = upload_validated_data_to_s3(
-                                df, 
+                            success = upload_validated_data_to_s3(
+                                s3,
+                                df_with_validation, 
                                 st.session_state.validation_states, 
                                 bucket_name, 
                                 prefix,
-                                username=username # Make sure the function can accept username!
+                                username=username
                             )
-                            
-                            if success:
-                                st.success(f"✅ Successfully uploaded {validated_count} validated rows to S3 as {s3_key}!")
-                            else:
-                                st.error("❌ Failed to upload data to S3. Please check your AWS credentials and try again.")
             else:
                 st.info("No validated rows to upload yet")
         
