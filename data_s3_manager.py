@@ -102,18 +102,55 @@ class S3Manager:
             return None
 
 # Example usage
-if __name__ == "__main__":
-    # Create an instance of S3Manager
-    s3_manager = S3Manager()
-    
-    # List existing files
-    print("=== Listing existing files ===")
-    s3_manager.list_objects_in_folder()
-    
-    print("\n=== Example: Upload JSON data ===")
-    
-    # Upload sample data
-    #s3_manager.upload_file_to_s3(f"{s3_manager.prefix}assembled_data.json", "../data_generation/assembled_data.json")
+import argparse
+import sys
+import json
 
-    json_obj = s3_manager.read_json_from_s3(f"{s3_manager.prefix}assembled_data.json")
-    print(json_obj)
+def main():
+    parser = argparse.ArgumentParser(
+        description="S3Manager CLI: Interact with S3 to list files, upload, or download JSON objects."
+    )
+    subparsers = parser.add_subparsers(dest='command', required=True)
+
+    # Subparser for list
+    parser_list = subparsers.add_parser('list', help='List files in the S3 folder')
+
+    # Subparser for upload
+    parser_upload = subparsers.add_parser('upload', help='Upload a file to S3')
+    parser_upload.add_argument('local_path', type=str, help='Local file path to upload')
+    parser_upload.add_argument('--s3-key', type=str, help='S3 key (remote path)', required=False)
+
+    # Subparser for download/read
+    parser_read = subparsers.add_parser('read', help='Read a JSON object from S3')
+    parser_read.add_argument('--s3-key', type=str, help='S3 key (remote path)', required=False)
+
+    args = parser.parse_args()
+    s3_manager = S3Manager()
+
+    if args.command == "list":
+        print("=== Listing existing files ===")
+        s3_manager.list_objects_in_folder()
+
+    elif args.command == "upload":
+        file_name = os.path.basename(args.local_path)
+        print(f"File name: {file_name}")
+        s3_key = args.s3_key or f"{s3_manager.prefix}{file_name}"
+        local_path = args.local_path
+        print(f"Uploading '{local_path}' to S3 as '{s3_key}'...")
+        result = s3_manager.upload_file_to_s3(s3_key, local_path)
+        if not result:
+            sys.exit(1)
+            
+    elif args.command == "read":
+        s3_key = args.s3_key or f"{s3_manager.prefix}assembled_data.json"
+        print(f"Reading JSON from S3 key: {s3_key} ...")
+        json_obj = s3_manager.read_json_from_s3(s3_key)
+        if json_obj is not None:
+            print(json.dumps(json_obj, indent=2))
+        else:
+            sys.exit(1)
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
