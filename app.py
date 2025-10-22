@@ -108,7 +108,7 @@ with col1:
             json_obj = read_json_from_s3(s3, bucket_name, f"{prefix}assembled_data_pairs.json")
             if json_obj is not None:
                 st.session_state.s3_data = json_obj
-                st.success(f"✅ Successfully downloaded data")
+                st.info(f"✅ Successfully downloaded data")
             else:
                 st.error("Failed to download data from S3")
         except Exception as e:
@@ -122,7 +122,7 @@ with col2:
 
 # Show data status
 if st.session_state.s3_data is not None:
-    st.info(f"📊 Data loaded: {len(st.session_state.s3_data)} rows ready for validation")
+    st.info(f"📊 Data loaded, ready for validation")
 
 # Use session state data
 json_obj = st.session_state.s3_data
@@ -151,7 +151,9 @@ if json_obj is not None:
 
         # Display validation interface
         st.subheader("📊 Data Validation Table")
-        st.write("Review the sentences and check the box if they are correctly labeled:")
+        st.success("""
+            Review the sentences and check the box if they are correctly labeled, leave it unchecked if you are not sure. Once you are done, click the 'Download & Upload Results' button to download the validated data or upload it back to S3 by entering your first name in the text box.
+        """, icon="💡")
         
         # Create table header
         header_col1, header_col2, header_col3, header_col4, header_col5, header_col6 = st.columns([2, 2, 2, 2, 2, 1])
