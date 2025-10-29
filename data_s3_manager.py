@@ -147,6 +147,9 @@ def main():
         json_obj = s3_manager.read_json_from_s3(s3_key)
         if json_obj is not None:
             print(json.dumps(json_obj, indent=2))
+            name = s3_key.split("/")[-1]
+            with open(f"data/downloaded_from_s3/{name}", "w") as f:
+                json.dump(json_obj, f, indent=2)
         else:
             sys.exit(1)
     else:
