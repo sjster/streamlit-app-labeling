@@ -192,28 +192,35 @@ if json_obj is not None:
             row = df.iloc[idx]
             col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 2, 1])
 
+            label_val = row["label"]
+            # Set color: green for label==1, red for label==0
+            if label_val == 1 or label_val == "1" or label_val == True:
+                bg_color = "#d4edda"  # green
+                font_color = "#155724"
+            else:
+                bg_color = "#f8d7da"  # red
+                font_color = "#721c24"
+
             with col1:
                 st.write(f"{row['id']}")
             with col2:
                 st.write(f"{row['group_id']}")
             with col3:
-                st.write(f"{row['sentence1']}")
-            
-            # Apply background colors to entire columns 4 and 5
+                st.markdown(
+                    f"<div style='color: {font_color}; padding: 8px; border-radius: 5px'>{row['sentence1']}</div>",
+                    unsafe_allow_html=True,
+                )
             with col4:
                 st.markdown(
-                    f'<div style="color: #b32020; padding: 0.5em; border-radius: 8px; margin: 0.2em 0; min-height: 2em;">'
-                    f'{row["sentence2"]}'
-                    f'</div>',
-                    unsafe_allow_html=True
+                    f"<div style='color: {font_color}; padding: 8px; border-radius: 5px'>{row['sentence2']}</div>",
+                    unsafe_allow_html=True,
                 )
             with col5:
                 st.markdown(
-                    f'<div style="color: #2066b3; padding: 0.5em; border-radius: 8px; margin: 0.2em 0; min-height: 2em;">'
-                    f'{row["label"]}'
-                    f'</div>', 
-                    unsafe_allow_html=True
+                    f"<div style='color: {font_color}; padding: 8px; border-radius: 5px'>{row['label']}</div>",
+                    unsafe_allow_html=True,
                 )
+                
             
             with col6:
                 # Create unique key for each checkbox
