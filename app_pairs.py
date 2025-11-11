@@ -50,12 +50,14 @@ def upload_validated_data_to_s3(s3, df, validation_states, bucket_name, prefix, 
                 "validated_by": username if username else "unknown"
             }
         }
+
+        timestamp = pd.Timestamp.now().isoformat()
         
         # Upload to S3 with username in filename if provided
         if username:
-            s3_key = f"{prefix}validated_data_pairs_{username}.json"
+            s3_key = f"{prefix}validated_data_pairs_{username}_{timestamp}.json"
         else:
-            s3_key = f"{prefix}validated_data_pairs.json"
+            s3_key = f"{prefix}validated_data_pairs_{timestamp} (anonymous).json"
 
         json_str = json.dumps(validated_data, ensure_ascii=False, indent=2)
 
